@@ -4,6 +4,9 @@ import cirq
 import networkx as nx
 import numpy as np
 import numpy.typing as npt
+from qiskit import QuantumCircuit, transpile
+from qiskit.circuit.classicalfunction import ClassicalFunction
+from qiskit_aer import AerSimulator
 from scipy.linalg import expm
 
 
@@ -66,3 +69,35 @@ def simulate(circuit: cirq.Circuit, total_time: int) -> Result:
 
     enegy_cost = (num_tries * (4.11 * 10**-21) * 0.1 * len(circuit)) / t
     return Result(_result, num_tries, enegy_cost)
+
+
+def input_circuit(input_list):
+    circ = QuantumCircuit(4)
+
+    for i, element in enumerate(input_list):
+        if element:
+            circ.x(i)
+        else:
+            circ.id(i)
+    return circ
+
+
+def reversible_evaluate(program: list[str], input_param: list[int]):
+    expr_string = "def grover_oracle(x: Int1, y: Int1, z: Int1) -> Int1:\n"
+
+    for expr in program:
+        expr_string = expr_string + "    " + expr + "\n"
+
+    expr = ClassicalFunction(expr_string)
+    simulator = AerSimulator()
+    quantum_circuit = expr.synth(registerless=False)
+    new_creg = quantum_circuit._create_creg(1, "c")
+    quantum_circuit.add_register(new_creg)
+    quantum_circuit.measure(quantum_circuit.num_qubits - 1, new_creg)
+    quantum_circuit = input_circuit(input_param).compose(quantum_circuit)
+    qcirc = transpile(quantum_circuit, simulator)
+    result = simulator.run(qcirc, shots=1).result()
+    counts = result.get_counts(qcirc)
+    q_result = int(list(counts.keys())[0][0])
+    energy_cost = len(program) * (4.11 * 10**-21) * np.log(2)
+    return Result(q_result, len(program), energy_cost)

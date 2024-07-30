@@ -1,3 +1,4 @@
 checks_superstaq~=0.5.20
 numpy
 scipy
+qiskit-aer
