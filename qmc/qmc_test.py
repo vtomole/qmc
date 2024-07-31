@@ -2,7 +2,7 @@
 import cirq
 import numpy as np
 
-from qmc.qmc import Result, reversible_evaluate, simulate
+from qmc.qmc import compare, simulate
 
 
 def test_feynman_path() -> None:
@@ -24,6 +24,5 @@ def test_feynman_path() -> None:
 
 def test_and_not_nand() -> None:
     program = ["a = x and y", "b = not z", "c = not a", "d = b ^ c", "return not d"]
-    assert reversible_evaluate(program, [0, 0, 1]) == Result(
-        output=0, runtime=5, energy_cost=1.4244174560506876e-20
-    )
+    result = compare(program, [0, 0, 1], 100)
+    assert result.classical_energy_cost > result.quantum_energy_cost

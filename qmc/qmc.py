@@ -4,9 +4,9 @@ import cirq
 import networkx as nx
 import numpy as np
 import numpy.typing as npt
-from qiskit import QuantumCircuit, transpile
+import superstaq as ss
+from qiskit import QuantumCircuit
 from qiskit.circuit.classicalfunction import ClassicalFunction
-from qiskit_aer import AerSimulator
 from scipy.linalg import expm
 
 
@@ -18,7 +18,8 @@ class Result:
 
     output: cirq.Result
     runtime: int
-    energy_cost: float
+    quantum_energy_cost: float
+    classical_energy_cost: float
 
 
 def generate_psis(n: int) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
@@ -67,8 +68,9 @@ def simulate(circuit: cirq.Circuit, total_time: int) -> Result:
             _result = simulator.run(circuit, repetitions=1)
             break
 
-    enegy_cost = (num_tries * (4.11 * 10**-21) * 0.1 * len(circuit)) / t
-    return Result(_result, num_tries, enegy_cost)
+    quantum_enegy_cost = (num_tries * (4.11 * 10**-21) * 0.1 * len(circuit)) / t
+    classical_energy_cost = len(circuit) * (4.11 * 10**-21) * np.log(2)
+    return Result(_result, num_tries, quantum_enegy_cost, classical_energy_cost)
 
 
 def input_circuit(input_list):
@@ -82,22 +84,23 @@ def input_circuit(input_list):
     return circ
 
 
-def reversible_evaluate(program: list[str], input_param: list[int]):
+def qiskit_circuit(program, input_param):
     expr_string = "def grover_oracle(x: Int1, y: Int1, z: Int1) -> Int1:\n"
 
     for expr in program:
         expr_string = expr_string + "    " + expr + "\n"
 
     expr = ClassicalFunction(expr_string)
-    simulator = AerSimulator()
+
     quantum_circuit = expr.synth(registerless=False)
     new_creg = quantum_circuit._create_creg(1, "c")
     quantum_circuit.add_register(new_creg)
     quantum_circuit.measure(quantum_circuit.num_qubits - 1, new_creg)
     quantum_circuit = input_circuit(input_param).compose(quantum_circuit)
-    qcirc = transpile(quantum_circuit, simulator)
-    result = simulator.run(qcirc, shots=1).result()
-    counts = result.get_counts(qcirc)
-    q_result = int(list(counts.keys())[0][0])
-    energy_cost = len(program) * (4.11 * 10**-21) * np.log(2)
-    return Result(q_result, len(program), energy_cost)
+    return quantum_circuit
+
+
+def compare(program: list[str], input_list, total_quantum_time=100):
+    the_qiskit_circuit = qiskit_circuit(program, input_list)
+    cirq_circuit = ss.converters.qiskit_to_cirq(the_qiskit_circuit)
+    return simulate(cirq_circuit, total_quantum_time)
