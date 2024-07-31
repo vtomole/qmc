@@ -4,6 +4,10 @@ import cirq
 import networkx as nx
 import numpy as np
 import numpy.typing as npt
+import qiskit
+import superstaq as ss
+from qiskit import QuantumCircuit
+from qiskit.circuit.classicalfunction import ClassicalFunction
 from scipy.linalg import expm
 
 
@@ -15,7 +19,8 @@ class Result:
 
     output: cirq.Result
     runtime: int
-    energy_cost: float
+    quantum_energy_cost: float
+    classical_energy_cost: float
 
 
 def generate_psis(n: int) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
@@ -64,5 +69,51 @@ def simulate(circuit: cirq.Circuit, total_time: int) -> Result:
             _result = simulator.run(circuit, repetitions=1)
             break
 
-    enegy_cost = (num_tries * (4.11 * 10**-21) * 0.1 * len(circuit)) / t
-    return Result(_result, num_tries, enegy_cost)
+    quantum_enegy_cost = (num_tries * (4.11 * 10**-21) * 0.1 * len(circuit)) / t
+    classical_energy_cost = len(circuit) * (4.11 * 10**-21) * np.log(2)
+    return Result(_result, num_tries, quantum_enegy_cost, classical_energy_cost)
+
+
+def input_circuit(input_list: list[int]) -> qiskit.QuantumCircuit:
+    """:param input_list: Inputs the data
+    :return: Quantum circuit that encodes the input
+    """
+    circ = QuantumCircuit(4)
+
+    for i, element in enumerate(input_list):
+        if element:
+            circ.x(i)
+        else:
+            circ.id(i)
+    return circ
+
+
+def qiskit_circuit(program: list[str], input_param: list[int]) -> qiskit.QuantumCircuit:
+    """:param program:  Theprogram
+    :param input_param: The input
+    :return: The quantum circuit
+    """
+    expr_string = "def grover_oracle(x: Int1, y: Int1, z: Int1) -> Int1:\n"
+
+    for expr in program:
+        expr_string = expr_string + "    " + expr + "\n"
+
+    fun = ClassicalFunction(expr_string)
+
+    quantum_circuit = fun.synth(registerless=False)
+    new_creg = quantum_circuit._create_creg(1, "c")
+    quantum_circuit.add_register(new_creg)
+    quantum_circuit.measure(quantum_circuit.num_qubits - 1, new_creg)
+    quantum_circuit = input_circuit(input_param).compose(quantum_circuit)
+    return quantum_circuit
+
+
+def compare(program: list[str], input_list: list[int], total_quantum_time: int = 100) -> Result:
+    """:param program: The program
+    :param input_list: The input program
+    :param total_quantum_time: How much to run the quantum walk
+    :return: The result
+    """
+    the_qiskit_circuit = qiskit_circuit(program, input_list)
+    cirq_circuit = ss.converters.qiskit_to_cirq(the_qiskit_circuit)
+    return simulate(cirq_circuit, total_quantum_time)
