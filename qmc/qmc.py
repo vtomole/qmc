@@ -5,7 +5,7 @@ import networkx as nx
 import numpy as np
 import numpy.typing as npt
 import qiskit
-import superstaq as ss
+# import superstaq as ss
 from qiskit import QuantumCircuit
 from qiskit.circuit.classicalfunction import ClassicalFunction
 from scipy.linalg import expm
@@ -117,3 +117,37 @@ def compare(program: list[str], input_list: list[int], total_quantum_time: int =
     the_qiskit_circuit = qiskit_circuit(program, input_list)
     cirq_circuit = ss.converters.qiskit_to_cirq(the_qiskit_circuit)
     return simulate(cirq_circuit, total_quantum_time)
+
+
+def qram(addr, qubits, write=False):
+    cirq_circuit = cirq.Circuit()
+
+    cirq_circuit = addr + cirq_circuit
+
+    ### Routing nodes ####
+    cirq_circuit.append(cirq.CX(qubits[0], qubits[2]))
+    cirq_circuit.append(cirq.X(qubits[3]))
+    cirq_circuit.append(cirq.CX(qubits[2], qubits[3]))
+
+    cirq_circuit.append(cirq.CCX(qubits[1], qubits[2], qubits[4]))
+    cirq_circuit.append(cirq.CX(qubits[4], qubits[2]))
+
+    cirq_circuit.append(cirq.CCX(qubits[1], qubits[3], qubits[5]))
+    cirq_circuit.append(cirq.CX(qubits[5], qubits[3]))
+    if write:
+        cirq_circuit.append(cirq.X(qubits[11])) # Write mode (read mode if commented)
+    ## Writing to memory cell ###
+    cirq_circuit.append(cirq.CCX(qubits[11], qubits[4], qubits[9]))
+    cirq_circuit.append(cirq.CCX(qubits[11], qubits[5], qubits[8]))
+    cirq_circuit.append(cirq.CCX(qubits[11], qubits[2], qubits[7]))
+    cirq_circuit.append(cirq.CCX(qubits[11], qubits[3], qubits[6]))
+
+    ### Reading memory cell ###
+    cirq_circuit.append(cirq.CCX(qubits[4], qubits[9], qubits[10]))
+    cirq_circuit.append(cirq.CCX(qubits[5], qubits[8], qubits[10]))
+    cirq_circuit.append(cirq.CCX(qubits[2], qubits[7], qubits[10]))
+    cirq_circuit.append(cirq.CCX(qubits[3], qubits[6], qubits[10]))
+    cirq_circuit.append(cirq.measure(qubits[10]))  # Measuring readout qubit
+
+
+    return cirq_circuit
