@@ -5,7 +5,6 @@ import networkx as nx
 import numpy as np
 import numpy.typing as npt
 import qiskit
-import superstaq as ss
 from qiskit import QuantumCircuit
 from qiskit.circuit.classicalfunction import ClassicalFunction
 from scipy.linalg import expm
@@ -72,6 +71,9 @@ def simulate(circuit: cirq.Circuit, total_time: int) -> Result:
     quantum_enegy_cost = (num_tries * (4.11 * 10**-21) * 0.1 * len(circuit)) / t
     classical_energy_cost = len(circuit) * (4.11 * 10**-21) * np.log(2)
     return Result(_result, num_tries, quantum_enegy_cost, classical_energy_cost)
+
+
+5
 
 
 def input_circuit(input_list: list[int]) -> qiskit.QuantumCircuit:
