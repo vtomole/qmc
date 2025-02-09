@@ -5,8 +5,8 @@ import networkx as nx
 import numpy as np
 import numpy.typing as npt
 import qiskit
-import superstaq as ss
-from qiskit import QuantumCircuit
+from cirq.contrib.qasm_import import circuit_from_qasm
+from qiskit import QuantumCircuit, qasm2
 from qiskit.circuit.classicalfunction import ClassicalFunction
 from scipy.linalg import expm
 
@@ -115,5 +115,5 @@ def compare(program: list[str], input_list: list[int], total_quantum_time: int =
     :return: The result
     """
     the_qiskit_circuit = qiskit_circuit(program, input_list)
-    cirq_circuit = ss.converters.qiskit_to_cirq(the_qiskit_circuit)
+    cirq_circuit = circuit_from_qasm(qasm2.dumps(the_qiskit_circuit))
     return simulate(cirq_circuit, total_quantum_time)
