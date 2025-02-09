@@ -9,8 +9,8 @@ pip install qmc
 ```
 
 ## Getting started
-Hamiltonian quantum computers were first invented with the potential application of performing dissipasion-free computation. qmc allows one do perform such
-resource estimations. Below is a circuit composed of `NOT` gates which shows that executing that circuit on a Hamiltonian quantum computer dissipates less energy than on a classical computer.  
+Hamiltonian quantum computers were first invented with the potential application of performing dissipasion-free computation. qmc allows one perform such
+resource estimations. Below is a circuit composed of `NOT` gates which shows that executing a circuit on a Hamiltonian quantum computer dissipates less energy than on a classical computer.  
 ```python
 import cirq
 from qmc.qmc import simulate
