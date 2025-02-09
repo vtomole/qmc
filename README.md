@@ -1,6 +1,6 @@
 
 # qmc: A python framework for Hamiltonian Quantum computation
-qmc, named after the title of a [foundational paper (pdf)](www.quantum-dynamic.eu/doc/feynman85_qmc_optics_letters.pdf) in quantum computing, is a library for writing, manipulating, and optimizing Hamiltonian quantum computers.
+qmc, named after the title of a [foundational paper (pdf)](http://www.quantum-dynamic.eu/doc/feynman85_qmc_optics_letters.pdf) in quantum computing, is a library for writing, manipulating, and optimizing Hamiltonian quantum computers.
 ## Installation
 The qmc package is available via `pip` and can be installed in your current Python environment with the command:
 
